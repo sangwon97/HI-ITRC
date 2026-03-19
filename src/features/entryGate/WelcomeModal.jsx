@@ -1,9 +1,15 @@
 // 시작 안내 팝업
-import { useRef, useCallback } from 'react';
+import React, { useRef, useCallback } from 'react';
 
 const VIDEOS = ['videos/splash_video_1.mp4', 'videos/splash_video_2.mp4'];
 
-export default function WelcomeModal({ open, onEnter, onDismissToday }) {
+export default function WelcomeModal({
+  open,
+  onEnter,
+  onDismissToday,
+  showVideo = true,
+  showDismissToday = true,
+}) {
   if (!open) return null;
 
   const indexRef = useRef(0);
@@ -16,14 +22,19 @@ export default function WelcomeModal({ open, onEnter, onDismissToday }) {
 
   return (
     <div id="welcome-modal-backdrop">
-      <video
-        className="welcome-bg-video"
-        src={VIDEOS[0]}
-        autoPlay
-        muted
-        playsInline
-        onEnded={handleEnded}
-      />
+      {showVideo ? (
+        <video
+          className="welcome-bg-video"
+          src={VIDEOS[0]}
+          autoPlay
+          muted
+          playsInline
+          preload="metadata"
+          onEnded={handleEnded}
+        />
+      ) : (
+        <div className="welcome-bg-fallback" aria-hidden="true" />
+      )}
       <section id="welcome-modal" role="dialog" aria-modal="true" aria-labelledby="welcome-title">
         <p className="welcome-eyebrow">Welcome</p>
         <h2 id="welcome-title">ITRC 전시회에 오신 여러분, 환영합니다.</h2>
@@ -36,9 +47,11 @@ export default function WelcomeModal({ open, onEnter, onDismissToday }) {
           로드맵, 미니맵, 부스 정보, 포스터 상세 보기 기능을 통해 ITRC 전시를 자유롭게 둘러보실 수 있습니다.
         </p>
         <div className="welcome-actions">
-          <button type="button" className="welcome-secondary" onClick={onDismissToday}>
-            오늘 하루 보지 않기
-          </button>
+          {showDismissToday ? (
+            <button type="button" className="welcome-secondary" onClick={onDismissToday}>
+              오늘 하루 보지 않기
+            </button>
+          ) : null}
           <button type="button" className="welcome-primary" onClick={onEnter}>
             ITRC 가상전시회 입장하기
           </button>

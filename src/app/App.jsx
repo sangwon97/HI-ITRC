@@ -10,6 +10,21 @@ import PosterModal from '../features/posterViewer/PosterModal.jsx';
 import NpcModal from '../features/npcViewer/NpcModal.jsx';
 import SearchPanel from '../features/search/SearchPanel.jsx';
 
+const MOBILE_SCENE_QUERY = '(max-width: 900px), (pointer: coarse)';
+const DESKTOP_RENDERER_ATTR =
+  'colorManagement: true; antialias: true; maxCanvasWidth: 1920; maxCanvasHeight: 1920;';
+const MOBILE_RENDERER_ATTR =
+  'colorManagement: true; antialias: false; precision: mediump; maxCanvasWidth: 1280; maxCanvasHeight: 1280;';
+const MOBILE_BASE_ASSET_IDS = new Set([
+  'Walls',
+  'floor',
+  'carpet',
+  'booths',
+  'navmesh',
+  'navmeshMovable',
+  'minimapFloorArea',
+]);
+
 const boothNameGeneratorAttr = `
   csvUrl: BoothName_PosRot.csv;
   charLimit: 16;
@@ -18,11 +33,29 @@ const boothNameGeneratorAttr = `
   fontSizePx: 40
 `;
 
-const assetMarkup = [...assetItems, ...tvItems]
+function matchesMobileSceneProfile() {
+  return typeof window !== 'undefined' && window.matchMedia(MOBILE_SCENE_QUERY).matches;
+}
+
+function scheduleDeferredSceneTask(task) {
+  if (typeof window === 'undefined') {
+    return () => {};
+  }
+
+  if (typeof window.requestIdleCallback === 'function') {
+    const idleId = window.requestIdleCallback(task, { timeout: 1200 });
+    return () => window.cancelIdleCallback?.(idleId);
+  }
+
+  const timeoutId = window.setTimeout(task, 450);
+  return () => window.clearTimeout(timeoutId);
+}
+
+const buildAssetMarkup = (items) => items
   .map(({ id, src }) => `<a-asset-item id="${id}" src="${src}"></a-asset-item>`)
   .join('');
 
-const verticalMarkup = verticalPanels
+const buildPanelMarkup = (items) => items
   .map(
     ({ model, texture }) => `
       <a-entity
@@ -33,35 +66,28 @@ const verticalMarkup = verticalPanels
   )
   .join('');
 
-const upperMarkup = upperPanels
-  .map(
-    ({ model, texture }) => `
-      <a-entity
-        gltf-model="${model}"
-        category-texture="src: ${texture}; rig: #rig; nearDistance: 12; checkInterval: 250"
-        position="0 0 0">
-      </a-entity>`,
-  )
-  .join('');
-
-const tvMarkup = tvItems
+const buildTvMarkup = (items) => items
   .map(({ id }) => `<a-entity gltf-model="#${id}" position="0 0 0"></a-entity>`)
   .join('');
 
-const sceneMarkup = `
-  <a-scene background="color: #4a4a5a" renderer="colorManagement: true; antialias: true; maxCanvasWidth: 1920; maxCanvasHeight: 1920;" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
-    <a-assets>
-      ${assetMarkup}
-    </a-assets>
+const buildNpcMarkup = (items) => items
+  .map(({ id, x, z, rotY, boothName, vrm }) => `
+    <a-entity
+      vrm-model="src: ${vrm}; boothId: ${id}; npcName: ${boothName} 안내원; npcGreeting: 안녕하세요! 저는 ${boothName}의 안내원입니다. 궁금하신 점이 있으시면 언제든지 말씀해 주세요."
+      position="${x} 0 ${z}"
+      scale="1.1 1.1 1.1"
+      rotation="0 ${rotY} 0">
+    </a-entity>`)
+  .join('');
 
+const mobileBaseAssets = assetItems.filter(({ id }) => MOBILE_BASE_ASSET_IDS.has(id));
+const mobileDeferredAssets = assetItems.filter(({ id }) => !MOBILE_BASE_ASSET_IDS.has(id));
+const sharedSceneMarkup = `
     <a-entity booth-name-generator="${boothNameGeneratorAttr}"></a-entity>
     <a-entity poster-picker="camera: #player-camera; rig: #rig; maxDistance: 8"></a-entity>
     <a-entity npc-picker="camera: #player-camera; rig: #rig; maxDistance: 5"></a-entity>
     <a-entity tv-picker="camera: #player-camera; rig: #rig; maxDistance: 15"></a-entity>
-    <a-entity tv-screen-manager></a-entity>
 
-    <a-entity gltf-model="#ceiling"></a-entity>
-    <a-entity gltf-model="#ceilingPanels"></a-entity>
     <a-entity id="walls-map" gltf-model="#Walls"></a-entity>
     <a-entity gltf-model="#floor"></a-entity>
     <a-entity gltf-model="#carpet"></a-entity>
@@ -74,29 +100,71 @@ const sceneMarkup = `
       a-star-route="navmesh: #navmesh-movable; rig: #rig; active: false; color: #ffffff; targetsJson: []; viaJson: []; startPoint: -4.79 0 -38.41; lineWidth: 0.34">
     </a-entity>
 
-    ${verticalMarkup}
-    ${upperMarkup}
-    ${tvMarkup}
-
-    <a-entity category-manager></a-entity>
-
     <a-entity
       id="rig"
       position="-4.79 1.6 -38.41"
       rotation="0 180 0"
-      camera-relative-wasd="camera: #player-camera; acceleration: 6.8"
+      camera-relative-wasd="camera: #player-camera; acceleration: 6.8; enabled: false"
       navmesh-follow="navmesh: #navmesh-whole; walls: #walls-map; height: 1.6">
-      <a-entity id="player-camera" camera look-controls="magicWindowTrackingEnabled: false" show-position></a-entity>
+      <a-entity
+        id="player-camera"
+        camera
+        look-controls="magicWindowTrackingEnabled: false; touchEnabled: false"
+        mobile-touch-look="enabled: true; reverseDrag: false"
+        show-position>
+      </a-entity>
     </a-entity>
+`;
 
-    ${npcItems.map(({ id, x, z, rotY, boothName, vrm }) => `
-    <a-entity
-      vrm-model="src: ${vrm}; boothId: ${id}; npcName: ${boothName} 안내원; npcGreeting: 안녕하세요! 저는 ${boothName}의 안내원입니다. 궁금하신 점이 있으시면 언제든지 말씀해 주세요."
-      position="${x} 0 ${z}"
-      scale="1.1 1.1 1.1"
-      rotation="0 ${rotY} 0">
-    </a-entity>`).join('')}
+const desktopSceneMarkup = `
+  <a-scene background="color: #4a4a5a" renderer="${DESKTOP_RENDERER_ATTR}" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+    <a-assets>
+      ${buildAssetMarkup([...assetItems, ...tvItems])}
+    </a-assets>
+
+    ${sharedSceneMarkup}
+    <a-entity tv-screen-manager></a-entity>
+    <a-entity gltf-model="#ceiling"></a-entity>
+    <a-entity gltf-model="#ceilingPanels"></a-entity>
+    ${buildPanelMarkup(verticalPanels)}
+    ${buildPanelMarkup(upperPanels)}
+    ${buildTvMarkup(tvItems)}
+    <a-entity category-manager></a-entity>
+    ${buildNpcMarkup(npcItems)}
   </a-scene>
+`;
+
+const mobileBaseSceneMarkup = `
+  <a-scene background="color: #4a4a5a" renderer="${MOBILE_RENDERER_ATTR}" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+    <a-assets>
+      ${buildAssetMarkup(mobileBaseAssets)}
+    </a-assets>
+
+    ${sharedSceneMarkup}
+  </a-scene>
+`;
+
+const mobilePanelAssetMarkup = buildAssetMarkup(mobileDeferredAssets);
+const mobileTvAssetMarkup = buildAssetMarkup(tvItems);
+const mobilePanelSceneMarkup = `
+  <a-entity id="mobile-deferred-panels-root">
+    <a-entity gltf-model="#ceiling"></a-entity>
+    <a-entity gltf-model="#ceilingPanels"></a-entity>
+    ${buildPanelMarkup(verticalPanels)}
+    ${buildPanelMarkup(upperPanels)}
+    <a-entity category-manager></a-entity>
+  </a-entity>
+`;
+const mobileTvSceneMarkup = `
+  <a-entity id="mobile-deferred-tv-root">
+    <a-entity tv-screen-manager></a-entity>
+    ${buildTvMarkup(tvItems)}
+  </a-entity>
+`;
+const mobileNpcSceneMarkup = `
+  <a-entity id="mobile-deferred-npc-root">
+    ${buildNpcMarkup(npcItems)}
+  </a-entity>
 `;
 
 function focusSceneCanvas() {
@@ -106,6 +174,27 @@ function focusSceneCanvas() {
     canvas?.focus?.();
     window.focus();
   });
+}
+
+function TypingStatusText({ text, stepMs = 280 }) {
+  const [dotCount, setDotCount] = useState(1);
+
+  useEffect(() => {
+    const timerId = window.setTimeout(() => {
+      setDotCount((current) => (current >= 3 ? 1 : current + 1));
+    }, stepMs);
+
+    return () => window.clearTimeout(timerId);
+  }, [dotCount, stepMs]);
+
+  return (
+    <p className="mobile-scene-status-line" aria-label={`${text}...`}>
+      <span>{text}</span>
+      <span className="typing-ellipsis" aria-hidden="true">
+        {'.'.repeat(dotCount)}
+      </span>
+    </p>
+  );
 }
 
 // 상단 카테고리 동선 선택 패널 본문
@@ -144,8 +233,8 @@ function RoutePanelContent({ activePath, onTogglePath }) {
   );
 }
 
-const Scene = React.memo(function Scene() {
-  return <div className="scene-host" dangerouslySetInnerHTML={{ __html: sceneMarkup }} />;
+const Scene = React.memo(function Scene({ markup }) {
+  return <div className="scene-host" dangerouslySetInnerHTML={{ __html: markup }} />;
 });
 
 // 오늘 하루 팝업 숨김 여부 키
@@ -171,9 +260,13 @@ function parseCsvRows(text) {
 }
 
 export default function App() {
+  const [isMobileScene] = useState(() => matchesMobileSceneProfile());
   // 'welcome' → 'loading' → 'ready'
   const [sceneStage, setSceneStage] = useState(() =>
-    window.localStorage.getItem(getTodayDismissKey()) ? 'loading' : 'welcome',
+    !isMobileScene && window.localStorage.getItem(getTodayDismissKey()) ? 'loading' : 'welcome',
+  );
+  const [mobileDeferredStatus, setMobileDeferredStatus] = useState(() =>
+    matchesMobileSceneProfile() ? 'idle' : 'complete',
   );
   const [splashProgress, setSplashProgress] = useState(0);
   const [activePath, setActivePath] = useState(null);
@@ -194,6 +287,18 @@ export default function App() {
     targetPoints: [],
     color: '#ffffff',
   });
+  const sceneMarkup = isMobileScene ? mobileBaseSceneMarkup : desktopSceneMarkup;
+  const isMobileDeferredBlocking =
+    isMobileScene && sceneStage === 'ready' && mobileDeferredStatus !== 'complete';
+  const isSceneInteractive =
+    sceneStage === 'ready' && (!isMobileScene || mobileDeferredStatus === 'complete');
+
+  useEffect(() => {
+    const rigEntity = document.getElementById('rig');
+    if (!rigEntity) return;
+
+    rigEntity.setAttribute('camera-relative-wasd', 'enabled', isSceneInteractive);
+  }, [isSceneInteractive, sceneStage]);
 
   useEffect(() => {
     // 선택 카테고리 기준 A* 로드맵 데이터 갱신
@@ -277,10 +382,12 @@ export default function App() {
       window.setTimeout(() => setSceneStage('ready'), 300);
     };
 
-    const progressTimer = window.setInterval(() => {
-      progressValue = Math.min(progressValue + (progressValue < 72 ? 6 : 3), 94);
-      setSplashProgress(progressValue);
-    }, 90);
+    const progressTimer = isMobileScene
+      ? null
+      : window.setInterval(() => {
+          progressValue = Math.min(progressValue + (progressValue < 72 ? 6 : 3), 94);
+          setSplashProgress(progressValue);
+        }, 90);
 
     const fallbackTimer = window.setTimeout(finishLoading, 30000);
 
@@ -334,17 +441,105 @@ export default function App() {
         if (attachSceneListener()) window.clearInterval(pollTimer);
       }, 100);
       return () => {
-        window.clearInterval(progressTimer);
+        if (progressTimer) window.clearInterval(progressTimer);
         window.clearTimeout(fallbackTimer);
         window.clearInterval(pollTimer);
       };
     }
 
     return () => {
-      window.clearInterval(progressTimer);
+      if (progressTimer) window.clearInterval(progressTimer);
       window.clearTimeout(fallbackTimer);
     };
-  }, [sceneStage]);
+  }, [isMobileScene, sceneStage]);
+
+  useEffect(() => {
+    if (!isMobileScene) {
+      setMobileDeferredStatus('complete');
+      return;
+    }
+
+    if (sceneStage !== 'ready') {
+      setMobileDeferredStatus('idle');
+      return;
+    }
+
+    const scene = document.querySelector('a-scene');
+    const assets = scene?.querySelector('a-assets');
+    if (!scene || !assets) return;
+
+    if (scene.querySelector('#mobile-deferred-npc-root')) {
+      setMobileDeferredStatus('complete');
+      return;
+    }
+
+    let cancelled = false;
+    const stageTimers = [];
+    const stageDefinitions = [
+      {
+        rootId: 'mobile-deferred-panels-root',
+        status: 'loading-panels',
+        assetMarkup: mobilePanelAssetMarkup,
+        markup: mobilePanelSceneMarkup,
+        nextDelay: 900,
+      },
+      {
+        rootId: 'mobile-deferred-tv-root',
+        status: 'loading-tv',
+        assetMarkup: mobileTvAssetMarkup,
+        markup: mobileTvSceneMarkup,
+        nextDelay: 1400,
+      },
+      {
+        rootId: 'mobile-deferred-npc-root',
+        status: 'loading-npc',
+        assetMarkup: '',
+        markup: mobileNpcSceneMarkup,
+        nextDelay: 1200,
+      },
+    ];
+
+    const scheduleStage = (index) => {
+      if (cancelled || index >= stageDefinitions.length) return;
+
+      const stage = stageDefinitions[index];
+      setMobileDeferredStatus(stage.status);
+
+      if (stage.assetMarkup) {
+        assets.insertAdjacentHTML('beforeend', stage.assetMarkup);
+      }
+
+      window.requestAnimationFrame(() => {
+        if (cancelled || scene.querySelector(`#${stage.rootId}`)) return;
+
+        scene.insertAdjacentHTML('beforeend', stage.markup);
+
+        const nextTimer = window.setTimeout(() => {
+          if (cancelled) return;
+
+          if (index === stageDefinitions.length - 1) {
+            setMobileDeferredStatus('complete');
+            return;
+          }
+
+          scheduleStage(index + 1);
+        }, stage.nextDelay);
+
+        stageTimers.push(nextTimer);
+      });
+    };
+
+    const cancelScheduledTask = scheduleDeferredSceneTask(() => {
+      if (cancelled) return;
+      scheduleStage(0);
+    });
+
+    return () => {
+      cancelled = true;
+      cancelScheduledTask();
+      stageTimers.forEach((timerId) => window.clearTimeout(timerId));
+    };
+  }, [isMobileScene, sceneStage]);
 
   useEffect(() => {
     // 부스 검색용 CSV와 이동 좌표 CSV 로드
@@ -437,11 +632,15 @@ export default function App() {
     focusSceneCanvas();
   };
 
-  const filteredSearchResults = searchQuery
+  const normalizedSearchQuery = searchQuery.trim().toLowerCase();
+
+  const filteredSearchResults = normalizedSearchQuery
     ? searchEntries
         .filter(
           (entry) =>
-            entry.boothName.includes(searchQuery) || entry.univName.includes(searchQuery),
+            String(entry.boothName || '').toLowerCase().includes(normalizedSearchQuery) ||
+            String(entry.univName || '').toLowerCase().includes(normalizedSearchQuery) ||
+            String(entry.objectName || '').toLowerCase().includes(normalizedSearchQuery),
         )
         .slice(0, 8)
     : [];
@@ -464,82 +663,101 @@ export default function App() {
       {sceneStage === 'welcome' && (
         <WelcomeModal
           open={true}
+          showDismissToday={!isMobileScene}
           onEnter={handleEnterExhibition}
           onDismissToday={handleDismissWelcomeToday}
         />
       )}
 
       {/* 2단계: 로딩 화면 (씬 마운트 시작) */}
-      {sceneStage === 'loading' && <SplashScreen progress={splashProgress} />}
+      {sceneStage === 'loading' && !isMobileScene && (
+        <SplashScreen progress={splashProgress} showVideo={!isMobileScene} />
+      )}
 
       {/* 씬은 loading 이후부터 마운트 */}
-      {sceneStage !== 'welcome' && <Scene />}
+      {sceneStage !== 'welcome' && <Scene markup={sceneMarkup} />}
 
       {/* 3단계: 전시장 UI (씬 로드 완료 후) */}
       {sceneStage === 'ready' && (
         <>
-          <div id="top-utility-row">
-            <SearchPanel
-              query={searchQuery}
-              results={filteredSearchResults}
-              isLoading={isSearchLoading}
-              onChange={setSearchQuery}
-              onSelect={handleSelectSearchResult}
-              onClear={() => setSearchQuery('')}
-              onFocus={() =>
-                setActiveUtilityTab((current) => (current === 'route' ? 'map' : current))
-              }
-            />
-            <div id="utility-tab-shell">
-              <div id="utility-tab-list">
-                <button
-                  type="button"
-                  className={`utility-tab ${activeUtilityTab === 'route' ? 'active' : ''}`}
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => {
-                    setSearchQuery('');
-                    setActiveUtilityTab((current) => (current === 'route' ? null : 'route'));
-                  }}
-                >
-                  로드맵
-                </button>
-                <button
-                  type="button"
-                  className={`utility-tab ${activeUtilityTab === 'map' ? 'active' : ''}`}
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => setActiveUtilityTab((current) => (current === 'map' ? null : 'map'))}
-                >
-                  미니맵
-                </button>
-              </div>
-              {activeUtilityTab === 'route' ? (
-                <RoutePanelContent activePath={activePath} onTogglePath={handleToggle} />
-              ) : null}
-              {activeUtilityTab === 'map' ? (
-                <MiniMap route={miniMapRoute} searchMarkers={miniMapSearchMarkers} />
-              ) : null}
+          {isMobileDeferredBlocking ? (
+            <div id="mobile-scene-status">
+              <TypingStatusText text="ITRC 2026 입장중" />
             </div>
-          </div>
-          <button
-            id="fullscreen-toggle"
-            type="button"
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={handleFullscreenToggle}
-          >
-            {isFullscreen ? '전체화면 닫기' : '전체화면'}
-          </button>
-          <InfoPanel
-            isOpen={isInfoPanelOpen}
-            activeItemId={activeInfoItemId}
-            isModalOpen={Boolean(activeInfoItemId)}
-            onTogglePanel={() => setIsInfoPanelOpen((current) => !current)}
-            onOpenItem={handleOpenInfoItem}
-            onCloseModal={handleCloseInfoModal}
-          />
-          <PosterModal poster={selectedPoster} onClose={() => setSelectedPoster(null)} />
-          <NpcModal npc={selectedNpc} onClose={() => setSelectedNpc(null)} />
-          <VideoViewer tv={selectedTv} onClose={() => setSelectedTv(null)} />
-          <VirtualJoystick />
+          ) : null}
+          {isSceneInteractive ? (
+            <>
+              <div id="top-utility-row">
+                <SearchPanel
+                  query={searchQuery}
+                  results={filteredSearchResults}
+                  isLoading={isSearchLoading}
+                  onChange={setSearchQuery}
+                  onSelect={handleSelectSearchResult}
+                  onClear={() => setSearchQuery('')}
+                  onFocus={() =>
+                    setActiveUtilityTab((current) => (current === 'route' ? 'map' : current))
+                  }
+                />
+                <div id="utility-tab-shell">
+                  <div id="utility-tab-list">
+                    <button
+                      type="button"
+                      className={`utility-tab ${activeUtilityTab === 'route' ? 'active' : ''}`}
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => {
+                        setSearchQuery('');
+                        setActiveUtilityTab((current) => (current === 'route' ? null : 'route'));
+                      }}
+                    >
+                      로드맵
+                    </button>
+                    <button
+                      type="button"
+                      className={`utility-tab ${activeUtilityTab === 'map' ? 'active' : ''}`}
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => setActiveUtilityTab((current) => (current === 'map' ? null : 'map'))}
+                    >
+                      미니맵
+                    </button>
+                  </div>
+                  {activeUtilityTab === 'route' ? (
+                    <RoutePanelContent activePath={activePath} onTogglePath={handleToggle} />
+                  ) : null}
+                  {activeUtilityTab === 'map' ? (
+                    <MiniMap route={miniMapRoute} searchMarkers={miniMapSearchMarkers} />
+                  ) : null}
+                </div>
+              </div>
+              {!isMobileScene ? (
+                <button
+                  id="fullscreen-toggle"
+                  type="button"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={handleFullscreenToggle}
+                >
+                  {isFullscreen ? '전체화면 닫기' : '전체화면'}
+                </button>
+              ) : null}
+              <InfoPanel
+                isOpen={isInfoPanelOpen}
+                activeItemId={activeInfoItemId}
+                isModalOpen={Boolean(activeInfoItemId)}
+                isMobile={isMobileScene}
+                onTogglePanel={() => setIsInfoPanelOpen((current) => !current)}
+                onOpenItem={handleOpenInfoItem}
+                onCloseModal={handleCloseInfoModal}
+              />
+              <PosterModal
+                poster={selectedPoster}
+                immersive={isMobileScene}
+                onClose={() => setSelectedPoster(null)}
+              />
+              <NpcModal npc={selectedNpc} onClose={() => setSelectedNpc(null)} />
+              <VideoViewer tv={selectedTv} onClose={() => setSelectedTv(null)} />
+              <VirtualJoystick />
+            </>
+          ) : null}
         </>
       )}
     </>

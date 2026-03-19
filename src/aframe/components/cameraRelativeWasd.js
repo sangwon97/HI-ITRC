@@ -13,6 +13,7 @@ registerOnce('camera-relative-wasd', {
   schema: {
     camera: { type: 'selector' },
     acceleration: { type: 'number', default: 6.8 },
+    enabled: { type: 'boolean', default: true },
   },
   init() {
     this.keys = {
@@ -31,6 +32,9 @@ registerOnce('camera-relative-wasd', {
     this.up = new THREE.Vector3(0, 1, 0);
 
     this.handleKeyDown = (event) => {
+      if (!this.data.enabled) {
+        return;
+      }
       if (isEditableTarget(event.target) || isEditableTarget(document.activeElement)) {
         return;
       }
@@ -53,7 +57,18 @@ registerOnce('camera-relative-wasd', {
     window.addEventListener('keyup', this.handleKeyUp);
     window.addEventListener('blur', this.handleBlur);
   },
+  update() {
+    if (this.data.enabled) return;
+
+    Object.keys(this.keys).forEach((code) => {
+      this.keys[code] = false;
+    });
+  },
   tick(_time, delta) {
+    if (!this.data.enabled) {
+      return;
+    }
+
     const cameraObject = this.data.camera?.object3D;
     if (!cameraObject) return;
 

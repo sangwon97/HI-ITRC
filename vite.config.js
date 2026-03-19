@@ -8,6 +8,7 @@ const staticAssets = [
   'imgs',
   'npc',
   'BoothName_PosRot.csv',
+  'threejs_objects_export.csv',
   'NPC_PosRot.csv',
   'NPC_men.vrm',
   'test-H.png',
@@ -26,8 +27,14 @@ function copyStaticAssets() {
       for (const asset of staticAssets) {
         const source = path.join(rootDir, asset);
         const destination = path.join(distDir, asset);
-        await mkdir(path.dirname(destination), { recursive: true });
-        await cp(source, destination, { recursive: true });
+        try {
+          await mkdir(path.dirname(destination), { recursive: true });
+          await cp(source, destination, { recursive: true });
+        } catch (error) {
+          if (error?.code !== 'ENOENT') {
+            throw error;
+          }
+        }
       }
     },
   };

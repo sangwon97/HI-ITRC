@@ -9,6 +9,10 @@ const placeholderMaterial = new THREE.MeshBasicMaterial({
   side: THREE.FrontSide,
 });
 
+function isMobileTextureProfile() {
+  return typeof window !== 'undefined' && window.matchMedia('(max-width: 900px), (pointer: coarse)').matches;
+}
+
 function loadImage(src) {
   if (imageCache.has(src)) {
     return imageCache.get(src);
@@ -26,6 +30,7 @@ function loadImage(src) {
 }
 
 function createScaledTexture(image, sceneEl, maxDimension) {
+  const mobileProfile = isMobileTextureProfile();
   const scale = Math.min(1, maxDimension / Math.max(image.naturalWidth, image.naturalHeight));
   const width = Math.max(1, Math.round(image.naturalWidth * scale));
   const height = Math.max(1, Math.round(image.naturalHeight * scale));
@@ -41,7 +46,7 @@ function createScaledTexture(image, sceneEl, maxDimension) {
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.anisotropy = Math.min(
     sceneEl.renderer?.capabilities?.getMaxAnisotropy?.() ?? 1,
-    maxDimension <= 128 ? 1 : 2,
+    mobileProfile || maxDimension <= 128 ? 1 : 2,
   );
   return texture;
 }
@@ -52,7 +57,10 @@ function loadPosterMaterial(src, sceneEl, quality) {
     return materialCache.get(cacheKey);
   }
 
-  const maxDimension = quality === 'high' ? 1024 : 128;
+  const mobileProfile = isMobileTextureProfile();
+  const maxDimension = quality === 'high'
+    ? (mobileProfile ? 256 : 1024)
+    : (mobileProfile ? 64 : 128);
   const promise = loadImage(src).then((image) => {
     const texture = createScaledTexture(image, sceneEl, maxDimension);
     return new THREE.MeshBasicMaterial({

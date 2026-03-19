@@ -7,6 +7,7 @@ import './components/distancePoster.js';
 import './components/showPosition.js';
 import './components/navmeshFollow.js';
 import './components/cameraRelativeWasd.js';
+import './components/mobileTouchLook.js';
 import './components/aStarRoute.js';
 import './components/posterPicker.js';
 import './components/vrmModel.js';
