@@ -1,0 +1,38 @@
+import { cp, mkdir } from 'node:fs/promises';
+import path from 'node:path';
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+const staticAssets = [
+  'models',
+  'imgs',
+  'npc',
+  'BoothName_PosRot.csv',
+  'NPC_PosRot.csv',
+  'NPC_men.vrm',
+  'test-H.png',
+  'test-V.png',
+  'videos',
+];
+
+function copyStaticAssets() {
+  return {
+    name: 'copy-static-assets',
+    apply: 'build',
+    async closeBundle() {
+      const rootDir = process.cwd();
+      const distDir = path.join(rootDir, 'dist');
+
+      for (const asset of staticAssets) {
+        const source = path.join(rootDir, asset);
+        const destination = path.join(distDir, asset);
+        await mkdir(path.dirname(destination), { recursive: true });
+        await cp(source, destination, { recursive: true });
+      }
+    },
+  };
+}
+
+export default defineConfig({
+  plugins: [react(), copyStaticAssets()],
+});
