@@ -166,6 +166,36 @@ const mobileNpcSceneMarkup = `
     ${buildNpcMarkup(npcItems)}
   </a-entity>
 `;
+const DEFAULT_ROUTE_START_POINT = { x: -4.79, y: 0, z: -38.41 };
+
+function getDistance2D(from, to) {
+  return Math.hypot((to.x || 0) - (from.x || 0), (to.z || 0) - (from.z || 0));
+}
+
+function sortBoothsByNearestOrder(startPoint, booths) {
+  const remainingBooths = [...booths];
+  const orderedBooths = [];
+  let currentPoint = startPoint;
+
+  while (remainingBooths.length > 0) {
+    let nearestIndex = 0;
+    let nearestDistance = getDistance2D(currentPoint, remainingBooths[0].target);
+
+    for (let index = 1; index < remainingBooths.length; index += 1) {
+      const candidateDistance = getDistance2D(currentPoint, remainingBooths[index].target);
+      if (candidateDistance < nearestDistance) {
+        nearestDistance = candidateDistance;
+        nearestIndex = index;
+      }
+    }
+
+    const [nearestBooth] = remainingBooths.splice(nearestIndex, 1);
+    orderedBooths.push(nearestBooth);
+    currentPoint = nearestBooth.target;
+  }
+
+  return orderedBooths;
+}
 
 function focusSceneCanvas() {
   document.activeElement?.blur?.();
@@ -281,6 +311,7 @@ export default function App() {
   const [isSearchLoading, setIsSearchLoading] = useState(true);
   const [searchEntries, setSearchEntries] = useState([]);
   const [searchCoordinateMap, setSearchCoordinateMap] = useState({});
+  const [routeStartPoint, setRouteStartPoint] = useState(DEFAULT_ROUTE_START_POINT);
   const [miniMapRoute, setMiniMapRoute] = useState({
     active: false,
     points: [],
@@ -314,12 +345,18 @@ export default function App() {
 
     routeEntity.setAttribute('a-star-route', 'active', true);
     routeEntity.setAttribute('a-star-route', 'color', selectedRoute.color);
+    const orderedBooths = sortBoothsByNearestOrder(routeStartPoint, selectedRoute.booths);
     routeEntity.setAttribute(
       'a-star-route',
       'targetsJson',
-      JSON.stringify(selectedRoute.booths.map(({ target }) => target)),
+      JSON.stringify(orderedBooths.map(({ target }) => target)),
     );
-  }, [activePath]);
+    routeEntity.setAttribute(
+      'a-star-route',
+      'startPoint',
+      `${routeStartPoint.x} ${routeStartPoint.y} ${routeStartPoint.z}`,
+    );
+  }, [activePath, routeStartPoint]);
 
   useEffect(() => {
     // 브라우저 전체화면 상태 동기화
@@ -582,7 +619,21 @@ export default function App() {
   }, []);
 
   const handleToggle = (key) => {
-    setActivePath((current) => (current === key ? null : key));
+    const rigPosition = document.getElementById('rig')?.object3D?.position;
+
+    setActivePath((current) => {
+      const nextPath = current === key ? null : key;
+
+      if (nextPath && rigPosition) {
+        setRouteStartPoint({
+          x: rigPosition.x,
+          y: 0,
+          z: rigPosition.z,
+        });
+      }
+
+      return nextPath;
+    });
   };
 
   // 페이지 전체화면 전환과 React 오버레이 유지
