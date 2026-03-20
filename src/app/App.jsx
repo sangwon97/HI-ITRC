@@ -242,7 +242,7 @@ function RoutePanelContent({ activePath, onTogglePath }) {
 
   return (
     <div id="utility-tab-content" className="route-content">
-      <p className="route-guide-copy">클릭하면 로드맵을 볼 수 있어요!</p>
+      <p className="route-guide-copy">선택한 카테고리의 로드맵을 제공해드립니다.</p>
       <div ref={chipListRef} className="route-chip-list">
         {demoRouteOptions.map(({ key, label }) => (
           <button
