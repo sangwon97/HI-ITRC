@@ -4,6 +4,67 @@ import closeIcon from '../../assets/icons/X.svg';
 import menuIcon from '../../assets/icons/menu.svg';
 import { infoMenuItems } from './infoContent.js';
 
+function InfoContentBody({ item }) {
+  return (
+    <>
+      {item.hero ? (
+        <section className="info-hero">
+          <div className="info-hero-copy">
+            {item.hero.badge ? <p className="info-section-eyebrow">{item.hero.badge}</p> : null}
+            <h4>{item.title}</h4>
+            {item.hero.caption ? <p className="info-hero-caption">{item.hero.caption}</p> : null}
+          </div>
+          {item.hero.imageSrc ? (
+            <div className="info-hero-media">
+              <img src={item.hero.imageSrc} alt={item.hero.imageAlt || item.title} loading="lazy" />
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
+      {item.highlights?.length ? (
+        <section className="info-highlight-grid" aria-label="주요 정보">
+          {item.highlights.map((highlight) => (
+            <article key={`${highlight.label}-${highlight.value}`} className="info-highlight-card">
+              <p>{highlight.label}</p>
+              <strong>{highlight.value}</strong>
+            </article>
+          ))}
+        </section>
+      ) : null}
+
+      {item.body?.length ? (
+        <section className="info-copy-block">
+          {item.body.map((paragraph) => (
+            <p key={paragraph}>{paragraph}</p>
+          ))}
+        </section>
+      ) : null}
+
+      {item.gallery?.length ? (
+        <section className="info-gallery-section">
+          {item.galleryTitle ? <p className="info-section-eyebrow">{item.galleryTitle}</p> : null}
+          <div className="info-gallery-grid">
+            {item.gallery.map((entry) => (
+              <article key={`${entry.title}-${entry.description}`} className="info-gallery-card">
+                {entry.imageSrc ? (
+                  <div className="info-gallery-media">
+                    <img src={entry.imageSrc} alt={entry.imageAlt || entry.title} loading="lazy" />
+                  </div>
+                ) : null}
+                <div className="info-gallery-copy">
+                  <h5>{entry.title}</h5>
+                  <p>{entry.description}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
+    </>
+  );
+}
+
 // 사이드 안내 패널
 export default function InfoPanel({
   isOpen,
@@ -122,9 +183,7 @@ export default function InfoPanel({
                 <p className="poster-mobile-eyebrow">Guide</p>
                 <h3 id="info-mobile-title">{activeItem.title}</h3>
                 <div className="info-mobile-body">
-                  {activeItem.body.map((paragraph) => (
-                    <p key={paragraph}>{paragraph}</p>
-                  ))}
+                  <InfoContentBody item={activeItem} />
                 </div>
               </section>
             </div>
@@ -142,9 +201,7 @@ export default function InfoPanel({
                 <h3 id="info-modal-title">{activeItem.title}</h3>
               </div>
               <div className="info-modal-body">
-                {activeItem.body.map((paragraph) => (
-                  <p key={paragraph}>{paragraph}</p>
-                ))}
+                <InfoContentBody item={activeItem} />
               </div>
               <div className="info-modal-footer">
                 <button type="button" className="info-modal-close" onClick={onCloseModal}>
