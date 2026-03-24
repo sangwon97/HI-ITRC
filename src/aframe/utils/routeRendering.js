@@ -20,7 +20,7 @@ export function renderRoute(state, options) {
   const lineMaterial = new THREE.MeshBasicMaterial({
     color,
     transparent: true,
-    opacity: 0.22,
+    opacity: 0.46,
     depthWrite: false,
     side: THREE.DoubleSide,
   });
