@@ -97,7 +97,7 @@ const sharedSceneMarkup = `
     <a-entity id="navmesh-movable" gltf-model="#navmeshMovable" visible="false"></a-entity>
     <a-entity
       id="route-visualizer"
-      a-star-route="navmesh: #navmesh-movable; rig: #rig; active: false; color: #ffffff; targetsJson: []; viaJson: []; startPoint: -4.79 0 -38.41; lineWidth: 0.34">
+      a-star-route="navmesh: #navmesh-movable; rig: #rig; active: false; color: #ffffff; targetsJson: []; viaJson: []; startPoint: -4.79 0 -38.41; lineWidth: 0.44">
     </a-entity>
 
     <a-entity
@@ -167,6 +167,7 @@ const mobileNpcSceneMarkup = `
   </a-entity>
 `;
 const DEFAULT_ROUTE_START_POINT = { x: -4.79, y: 0, z: -38.41 };
+const ROUTE_GUIDE_DISTANCE = 2.2;
 
 function getDistance2D(from, to) {
   return Math.hypot((to.x || 0) - (from.x || 0), (to.z || 0) - (from.z || 0));
@@ -206,6 +207,56 @@ function focusSceneCanvas() {
   });
 }
 
+function getCurrentRouteGuidePoint(startPoint) {
+  const cameraObject = document.getElementById('player-camera')?.object3D;
+  const rigObject = document.getElementById('rig')?.object3D;
+  const THREE = window.THREE;
+
+  if (cameraObject && THREE) {
+    const forward = new THREE.Vector3();
+    cameraObject.getWorldDirection(forward);
+    forward.y = 0;
+
+    if (forward.lengthSq() > 1e-6) {
+      forward.normalize();
+      forward.negate();
+      return {
+        x: startPoint.x + forward.x * ROUTE_GUIDE_DISTANCE,
+        y: 0,
+        z: startPoint.z + forward.z * ROUTE_GUIDE_DISTANCE,
+      };
+    }
+  }
+
+  if (rigObject) {
+    const yaw = rigObject.rotation.y || 0;
+    return {
+      x: startPoint.x - Math.sin(yaw) * ROUTE_GUIDE_DISTANCE,
+      y: 0,
+      z: startPoint.z - Math.cos(yaw) * ROUTE_GUIDE_DISTANCE,
+    };
+  }
+
+  return null;
+}
+
+function hexToRgba(hex, alpha) {
+  const normalized = hex.replace('#', '');
+  const expanded = normalized.length === 3
+    ? normalized.split('').map((char) => `${char}${char}`).join('')
+    : normalized;
+
+  if (!/^[\da-fA-F]{6}$/.test(expanded)) {
+    return `rgba(255, 255, 255, ${alpha})`;
+  }
+
+  const value = Number.parseInt(expanded, 16);
+  const red = (value >> 16) & 255;
+  const green = (value >> 8) & 255;
+  const blue = value & 255;
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+}
+
 function TypingStatusText({ text, stepMs = 280 }) {
   const [dotCount, setDotCount] = useState(1);
 
@@ -242,22 +293,31 @@ function RoutePanelContent({ activePath, onTogglePath }) {
 
   return (
     <div id="utility-tab-content" className="route-content">
-      <p className="route-guide-copy">선택한 카테고리의 로드맵을 제공해드립니다.</p>
+      <p className="route-guide-copy">카테고리를 선택하면 해당 전시관 중심의 추천 동선이 표시됩니다.</p>
       <div ref={chipListRef} className="route-chip-list">
-        {demoRouteOptions.map(({ key, label }) => (
-          <button
-            key={key}
-            type="button"
-            className={`route-chip ${key} ${activePath === key ? 'active' : ''}`}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => {
-              onTogglePath(key);
-              focusSceneCanvas();
-            }}
-          >
-            {label}
-          </button>
-        ))}
+        {demoRouteOptions.map(({ key, label, color }) => {
+          const isActive = activePath === key;
+
+          return (
+            <button
+              key={key}
+              type="button"
+              className={`route-chip ${key} ${isActive ? 'active' : ''}`}
+              style={isActive ? {
+                background: hexToRgba(color, 0.22),
+                borderColor: hexToRgba(color, 0.55),
+                color: '#f8fafc',
+              } : undefined}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => {
+                onTogglePath(key);
+                focusSceneCanvas();
+              }}
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -312,6 +372,7 @@ export default function App() {
   const [searchEntries, setSearchEntries] = useState([]);
   const [searchCoordinateMap, setSearchCoordinateMap] = useState({});
   const [routeStartPoint, setRouteStartPoint] = useState(DEFAULT_ROUTE_START_POINT);
+  const [routeViaPoints, setRouteViaPoints] = useState([]);
   const [miniMapRoute, setMiniMapRoute] = useState({
     active: false,
     points: [],
@@ -351,12 +412,13 @@ export default function App() {
       'targetsJson',
       JSON.stringify(orderedBooths.map(({ target }) => target)),
     );
+    routeEntity.setAttribute('a-star-route', 'viaJson', JSON.stringify(routeViaPoints));
     routeEntity.setAttribute(
       'a-star-route',
       'startPoint',
       `${routeStartPoint.x} ${routeStartPoint.y} ${routeStartPoint.z}`,
     );
-  }, [activePath, routeStartPoint]);
+  }, [activePath, routeStartPoint, routeViaPoints]);
 
   useEffect(() => {
     // 브라우저 전체화면 상태 동기화
@@ -625,11 +687,15 @@ export default function App() {
       const nextPath = current === key ? null : key;
 
       if (nextPath && rigPosition) {
-        setRouteStartPoint({
+        const nextStartPoint = {
           x: rigPosition.x,
           y: 0,
           z: rigPosition.z,
-        });
+        };
+        setRouteStartPoint(nextStartPoint);
+        setRouteViaPoints([getCurrentRouteGuidePoint(nextStartPoint)].filter(Boolean));
+      } else {
+        setRouteViaPoints([]);
       }
 
       return nextPath;
