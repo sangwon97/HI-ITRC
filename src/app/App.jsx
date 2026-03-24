@@ -130,7 +130,7 @@ const desktopSceneMarkup = `
     ${buildPanelMarkup(upperPanels)}
     ${buildTvMarkup(tvItems)}
     <a-entity category-manager></a-entity>
-    ${buildNpcMarkup(npcItems)}
+    <!-- ${buildNpcMarkup(npcItems)} -->
   </a-scene>
 `;
 
@@ -161,11 +161,11 @@ const mobileTvSceneMarkup = `
     ${buildTvMarkup(tvItems)}
   </a-entity>
 `;
-const mobileNpcSceneMarkup = `
-  <a-entity id="mobile-deferred-npc-root">
-    ${buildNpcMarkup(npcItems)}
-  </a-entity>
-`;
+// const mobileNpcSceneMarkup = `
+//   <a-entity id="mobile-deferred-npc-root">
+//     ${buildNpcMarkup(npcItems)}
+//   </a-entity>
+// `;
 const DEFAULT_ROUTE_START_POINT = { x: -4.79, y: 0, z: -38.41 };
 const ROUTE_GUIDE_DISTANCE = 2.2;
 
