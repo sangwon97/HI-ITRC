@@ -4,6 +4,58 @@ import closeIcon from '../../assets/icons/X.svg';
 import menuIcon from '../../assets/icons/menu.svg';
 import { infoMenuItems } from './infoContent.js';
 
+function InfoHighlights({ highlights }) {
+  if (!highlights?.length) return null;
+
+  return (
+    <section className="info-highlight-grid" aria-label="주요 정보">
+      {highlights.map((highlight) => (
+        <article key={`${highlight.label}-${highlight.value}`} className="info-highlight-card">
+          <p>{highlight.label}</p>
+          <strong>{highlight.value}</strong>
+        </article>
+      ))}
+    </section>
+  );
+}
+
+function InfoBodyCopy({ body }) {
+  if (!body?.length) return null;
+
+  return (
+    <section className="info-copy-block">
+      {body.map((paragraph) => (
+        <p key={paragraph}>{paragraph}</p>
+      ))}
+    </section>
+  );
+}
+
+function InfoGallerySection({ item }) {
+  if (!item.gallery?.length) return null;
+
+  return (
+    <section className="info-gallery-section">
+      {item.galleryTitle ? <p className="info-section-eyebrow">{item.galleryTitle}</p> : null}
+      <div className="info-gallery-grid">
+        {item.gallery.map((entry) => (
+          <article key={`${entry.title}-${entry.description}`} className="info-gallery-card">
+            {entry.imageSrc ? (
+              <div className="info-gallery-media">
+                <img src={entry.imageSrc} alt={entry.imageAlt || entry.title} loading="lazy" />
+              </div>
+            ) : null}
+            <div className="info-gallery-copy">
+              <h5>{entry.title}</h5>
+              <p>{entry.description}</p>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function InfoContentBody({ item }) {
   return (
     <>
@@ -22,45 +74,40 @@ function InfoContentBody({ item }) {
         </section>
       ) : null}
 
-      {item.highlights?.length ? (
-        <section className="info-highlight-grid" aria-label="주요 정보">
-          {item.highlights.map((highlight) => (
-            <article key={`${highlight.label}-${highlight.value}`} className="info-highlight-card">
-              <p>{highlight.label}</p>
-              <strong>{highlight.value}</strong>
-            </article>
-          ))}
-        </section>
-      ) : null}
+      <InfoHighlights highlights={item.highlights} />
+      <InfoBodyCopy body={item.body} />
+      <InfoGallerySection item={item} />
+    </>
+  );
+}
 
-      {item.body?.length ? (
-        <section className="info-copy-block">
-          {item.body.map((paragraph) => (
-            <p key={paragraph}>{paragraph}</p>
-          ))}
-        </section>
-      ) : null}
-
-      {item.gallery?.length ? (
-        <section className="info-gallery-section">
-          {item.galleryTitle ? <p className="info-section-eyebrow">{item.galleryTitle}</p> : null}
-          <div className="info-gallery-grid">
-            {item.gallery.map((entry) => (
-              <article key={`${entry.title}-${entry.description}`} className="info-gallery-card">
-                {entry.imageSrc ? (
-                  <div className="info-gallery-media">
-                    <img src={entry.imageSrc} alt={entry.imageAlt || entry.title} loading="lazy" />
-                  </div>
-                ) : null}
-                <div className="info-gallery-copy">
-                  <h5>{entry.title}</h5>
-                  <p>{entry.description}</p>
-                </div>
-              </article>
-            ))}
+function InfoDesktopModalBody({ item, onClose }) {
+  return (
+    <>
+      <div className="info-modal-main">
+        {item.hero?.imageSrc ? (
+          <div className="info-modal-media">
+            <img src={item.hero.imageSrc} alt={item.hero.imageAlt || item.title} loading="lazy" />
           </div>
-        </section>
-      ) : null}
+        ) : null}
+        <div className="info-modal-panel">
+          <div className="info-modal-panel-copy">
+            <p className="info-section-eyebrow">{item.hero?.badge || 'Guide'}</p>
+            <h3 id="info-modal-title">{item.title}</h3>
+            {item.hero?.caption ? <p className="info-modal-caption">{item.hero.caption}</p> : null}
+          </div>
+          <div className="info-modal-panel-body">
+            <InfoHighlights highlights={item.highlights} />
+            <InfoBodyCopy body={item.body} />
+          </div>
+          <div className="info-modal-footer">
+            <button type="button" className="info-modal-close" onClick={onClose}>
+              닫기
+            </button>
+          </div>
+        </div>
+      </div>
+      <InfoGallerySection item={item} />
     </>
   );
 }
@@ -69,7 +116,6 @@ function InfoContentBody({ item }) {
 export default function InfoPanel({
   isOpen,
   activeItemId,
-  isModalOpen,
   isMobile = false,
   onTogglePanel,
   onOpenItem,
@@ -167,7 +213,7 @@ export default function InfoPanel({
         </>
       )}
 
-      {isModalOpen && activeItem ? (
+      {activeItem ? (
         isMobile ? (
           <div id="info-mobile-viewer" role="dialog" aria-modal="true" aria-labelledby="info-mobile-title">
             <div id="info-mobile-stage">
@@ -180,7 +226,7 @@ export default function InfoPanel({
                 닫기
               </button>
               <section id="info-mobile-sheet">
-                <p className="poster-mobile-eyebrow">Guide</p>
+                <p className="info-mobile-eyebrow">Guide</p>
                 <h3 id="info-mobile-title">{activeItem.title}</h3>
                 <div className="info-mobile-body">
                   <InfoContentBody item={activeItem} />
@@ -197,16 +243,8 @@ export default function InfoPanel({
               aria-labelledby="info-modal-title"
               onClick={(event) => event.stopPropagation()}
             >
-              <div className="info-modal-header">
-                <h3 id="info-modal-title">{activeItem.title}</h3>
-              </div>
               <div className="info-modal-body">
-                <InfoContentBody item={activeItem} />
-              </div>
-              <div className="info-modal-footer">
-                <button type="button" className="info-modal-close" onClick={onCloseModal}>
-                  닫기
-                </button>
+                <InfoDesktopModalBody item={activeItem} onClose={onCloseModal} />
               </div>
             </section>
           </div>

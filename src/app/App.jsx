@@ -716,12 +716,25 @@ export default function App() {
     }
   };
 
-  // 사이드 메뉴 상세 모달 열기
+  const handleToggleInfoPanel = () => {
+    setIsInfoPanelOpen((current) => {
+      const next = !current;
+
+      if (next) {
+        setActiveUtilityTab(null);
+      }
+
+      return next;
+    });
+  };
+
+  // 사이드 메뉴 상세 콘텐츠 열기
   const handleOpenInfoItem = (itemId) => {
+    setActiveUtilityTab(null);
     setActiveInfoItemId(itemId);
   };
 
-  // 사이드 메뉴 상세 모달 닫기
+  // 사이드 메뉴 상세 콘텐츠 닫기
   const handleCloseInfoModal = () => {
     setActiveInfoItemId(null);
   };
@@ -859,9 +872,8 @@ export default function App() {
               <InfoPanel
                 isOpen={isInfoPanelOpen}
                 activeItemId={activeInfoItemId}
-                isModalOpen={Boolean(activeInfoItemId)}
                 isMobile={isMobileScene}
-                onTogglePanel={() => setIsInfoPanelOpen((current) => !current)}
+                onTogglePanel={handleToggleInfoPanel}
                 onOpenItem={handleOpenInfoItem}
                 onCloseModal={handleCloseInfoModal}
               />
