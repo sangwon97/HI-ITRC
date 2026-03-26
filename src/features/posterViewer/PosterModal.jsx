@@ -45,13 +45,19 @@ export default function PosterModal({ poster, onClose, immersive = false }) {
 
   return (
     <div id="poster-modal-backdrop" onClick={onClose}>
-      <section id="poster-modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+      <section
+        id="poster-modal"
+        role="dialog"
+        aria-modal="true"
+        onClick={(event) => event.stopPropagation()}
+      >
         <div className="poster-modal-media">
           <img src={poster.imageSrc} alt={poster.title} />
         </div>
         <div className="poster-modal-content">
+          <p className="poster-modal-eyebrow">Poster Detail</p>
           <h3>{poster.title}</h3>
-          <p>{poster.description}</p>
+          <p className="poster-modal-description">{poster.description}</p>
           <button type="button" className="poster-modal-close" onClick={onClose}>
             닫기
           </button>
