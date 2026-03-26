@@ -226,7 +226,7 @@ export default function InfoPanel({
                 닫기
               </button>
               <section id="info-mobile-sheet">
-                <p className="poster-mobile-eyebrow">Guide</p>
+                <p className="info-mobile-eyebrow">Guide</p>
                 <h3 id="info-mobile-title">{activeItem.title}</h3>
                 <div className="info-mobile-body">
                   <InfoContentBody item={activeItem} />

@@ -1,7 +1,15 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './app/App.jsx';
-import './app/styles.css';
+import './styles/base.css';
+import './styles/hud.css';
+import './styles/entryGate.css';
+import './styles/search.css';
+import './styles/infoPanel.css';
+import './styles/posterViewer.css';
+import './styles/mobileControls.css';
+import './styles/npcViewer.css';
+import './styles/videoViewer.css';
 
 const externalScripts = [
   'https://aframe.io/releases/1.4.0/aframe.min.js',
