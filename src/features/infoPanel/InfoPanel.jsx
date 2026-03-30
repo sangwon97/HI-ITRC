@@ -1,4 +1,6 @@
 import React from 'react';
+import chevronDownIcon from '../../assets/icons/Chevron down.svg';
+import chevronUpIcon from '../../assets/icons/Chevron up.svg';
 import chevronLeftIcon from '../../assets/icons/chevron-left.svg';
 import closeIcon from '../../assets/icons/X.svg';
 import menuIcon from '../../assets/icons/menu.svg';
@@ -32,11 +34,81 @@ function InfoBodyCopy({ body }) {
 }
 
 function InfoGallerySection({ item }) {
+  const hasLogoRail = item.gallery?.some((entry) => entry.logos?.length);
+  const galleryWithLogos = item.gallery?.filter((entry) => entry.logos?.length) || [];
+  const firstCategoryTitle = galleryWithLogos[0]?.title || null;
+  const [selectedEntryTitle, setSelectedEntryTitle] = React.useState(firstCategoryTitle);
+
+  React.useEffect(() => {
+    setSelectedEntryTitle(firstCategoryTitle);
+  }, [firstCategoryTitle, item.id]);
+
   if (!item.gallery?.length) return null;
+
+  if (hasLogoRail) {
+    return (
+      <section className="info-gallery-section info-gallery-dropdown-section">
+        <div className="info-category-list" role="list">
+          {galleryWithLogos.map((entry) => {
+            const isOpen = selectedEntryTitle === entry.title;
+            const accentStyle = entry.accentColor
+              ? { '--info-accent': entry.accentColor }
+              : undefined;
+
+            return (
+              <article
+                key={entry.title}
+                className={`info-category-list-item ${isOpen ? 'open' : ''}`}
+                role="listitem"
+                style={accentStyle}
+              >
+                <button
+                  type="button"
+                  className={`info-category-button ${isOpen ? 'open' : ''}`}
+                  aria-expanded={isOpen}
+                  onClick={() =>
+                    setSelectedEntryTitle((current) => (current === entry.title ? null : entry.title))
+                  }
+                >
+                  <span className="info-category-button-label">
+                    <span>{entry.title}</span>
+                    <span className="info-category-count-badge">{entry.logos.length}</span>
+                  </span>
+                  <img
+                    className="info-category-button-arrow"
+                    src={isOpen ? chevronUpIcon : chevronDownIcon}
+                    alt=""
+                    aria-hidden="true"
+                  />
+                </button>
+                {isOpen ? (
+                  <div className="info-category-panel">
+                    <div className="info-logo-rail standalone" role="list" aria-label={`${entry.title} 참여 대학 로고 목록`}>
+                      {entry.logos.map((logo) => (
+                        <article
+                          key={`${entry.title}-${logo.label}`}
+                          className="info-logo-card"
+                          role="listitem"
+                          style={accentStyle}
+                        >
+                          <div className="info-logo-media">
+                            <img src={logo.imageSrc} alt={logo.imageAlt || logo.label} loading="lazy" />
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </article>
+            );
+          })}
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="info-gallery-section">
-      {item.galleryTitle ? <p className="info-section-eyebrow">{item.galleryTitle}</p> : null}
       <div className="info-gallery-grid">
         {item.gallery.map((entry) => (
           <article key={`${entry.title}-${entry.description}`} className="info-gallery-card">
@@ -62,8 +134,6 @@ function InfoContentBody({ item }) {
       {item.hero ? (
         <section className="info-hero">
           <div className="info-hero-copy">
-            {item.hero.badge ? <p className="info-section-eyebrow">{item.hero.badge}</p> : null}
-            <h4>{item.title}</h4>
             {item.hero.caption ? <p className="info-hero-caption">{item.hero.caption}</p> : null}
           </div>
           {item.hero.imageSrc ? (
@@ -226,7 +296,6 @@ export default function InfoPanel({
                 닫기
               </button>
               <section id="info-mobile-sheet">
-                <p className="info-mobile-eyebrow">Guide</p>
                 <h3 id="info-mobile-title">{activeItem.title}</h3>
                 <div className="info-mobile-body">
                   <InfoContentBody item={activeItem} />
