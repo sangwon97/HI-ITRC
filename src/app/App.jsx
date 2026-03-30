@@ -22,7 +22,6 @@ const MOBILE_BASE_ASSET_IDS = new Set([
   'booths',
   'navmesh',
   'navmeshMovable',
-  'minimapFloorArea',
 ]);
 
 const boothNameGeneratorAttr = `
@@ -67,13 +66,27 @@ const buildPanelMarkup = (items) => items
   .join('');
 
 const buildTvMarkup = (items) => items
-  .map(({ id }) => `<a-entity gltf-model="#${id}" position="0 0 0"></a-entity>`)
+  .map(
+    ({ id, screenSrc, imageSrc, youtubeId }) => `
+      <a-entity
+        gltf-model="#${id}"
+        position="0 0 0">
+      </a-entity>
+      ${screenSrc
+        ? `
+      <a-entity
+        gltf-model="${screenSrc}"
+        tv-screen="imageSrc: ${imageSrc}; youtubeId: ${youtubeId}"
+        position="0 0 0">
+      </a-entity>`
+        : ''}`,
+  )
   .join('');
 
 const buildNpcMarkup = (items) => items
-  .map(({ id, x, z, rotY, boothName, vrm }) => `
+  .map(({ id, x, z, rotY, boothName, modelSrc }) => `
     <a-entity
-      vrm-model="src: ${vrm}; boothId: ${id}; npcName: ${boothName} 안내원; npcGreeting: 안녕하세요! 저는 ${boothName}의 안내원입니다. 궁금하신 점이 있으시면 언제든지 말씀해 주세요."
+      vrm-model="src: ${modelSrc}; boothId: ${id}; npcName: ${boothName} 안내원; npcGreeting: 안녕하세요! 저는 ${boothName}의 안내원입니다. 궁금하신 점이 있으시면 언제든지 말씀해 주세요."
       position="${x} 0 ${z}"
       scale="1.1 1.1 1.1"
       rotation="0 ${rotY} 0">
@@ -93,7 +106,6 @@ const sharedSceneMarkup = `
     <a-entity gltf-model="#carpet"></a-entity>
     <a-entity gltf-model="#booths"></a-entity>
     <a-entity id="navmesh-whole" gltf-model="#navmesh" visible="false"></a-entity>
-    <a-entity id="minimap-floor-map" gltf-model="#minimapFloorArea" visible="false"></a-entity>
     <a-entity id="navmesh-movable" gltf-model="#navmeshMovable" visible="false"></a-entity>
     <a-entity
       id="route-visualizer"
@@ -123,14 +135,13 @@ const desktopSceneMarkup = `
     </a-assets>
 
     ${sharedSceneMarkup}
-    <a-entity tv-screen-manager></a-entity>
     <a-entity gltf-model="#ceiling"></a-entity>
     <a-entity gltf-model="#ceilingPanels"></a-entity>
     ${buildPanelMarkup(verticalPanels)}
     ${buildPanelMarkup(upperPanels)}
     ${buildTvMarkup(tvItems)}
     <a-entity category-manager></a-entity>
-    <!-- ${buildNpcMarkup(npcItems)} -->
+    ${buildNpcMarkup(npcItems)}
   </a-scene>
 `;
 
@@ -157,15 +168,10 @@ const mobilePanelSceneMarkup = `
 `;
 const mobileTvSceneMarkup = `
   <a-entity id="mobile-deferred-tv-root">
-    <a-entity tv-screen-manager></a-entity>
     ${buildTvMarkup(tvItems)}
   </a-entity>
 `;
-// const mobileNpcSceneMarkup = `
-//   <a-entity id="mobile-deferred-npc-root">
-//     ${buildNpcMarkup(npcItems)}
-//   </a-entity>
-// `;
+const mobileNpcSceneMarkup = '';
 const DEFAULT_ROUTE_START_POINT = { x: -4.79, y: 0, z: -38.41 };
 const ROUTE_GUIDE_DISTANCE = 2.2;
 
@@ -589,14 +595,17 @@ export default function App() {
         markup: mobileTvSceneMarkup,
         nextDelay: 1400,
       },
-      {
+    ];
+
+    if (mobileNpcSceneMarkup.trim()) {
+      stageDefinitions.push({
         rootId: 'mobile-deferred-npc-root',
         status: 'loading-npc',
         assetMarkup: '',
         markup: mobileNpcSceneMarkup,
         nextDelay: 1200,
-      },
-    ];
+      });
+    }
 
     const scheduleStage = (index) => {
       if (cancelled || index >= stageDefinitions.length) return;

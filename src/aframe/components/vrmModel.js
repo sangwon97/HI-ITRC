@@ -36,24 +36,25 @@ registerOnce('vrm-model', {
       this.data.src,
       (gltf) => {
         const vrm = gltf.userData.vrm;
-        if (!vrm) {
-          console.error('[vrm-model] VRM 데이터를 찾을 수 없습니다.');
+        const sceneRoot = vrm?.scene || gltf.scene;
+        if (!sceneRoot) {
+          console.error('[vrm-model] 로드한 씬 데이터를 찾을 수 없습니다.');
           return;
         }
 
-        vrm.scene.rotation.y = Math.PI;
+        sceneRoot.rotation.y = Math.PI;
 
-        const humanoid = vrm.humanoid;
-        if (humanoid) {
-          const leftArm   = humanoid.getRawBoneNode('leftUpperArm');
-          const rightArm  = humanoid.getRawBoneNode('rightUpperArm');
-          const leftFore  = humanoid.getRawBoneNode('leftLowerArm');
+        if (vrm?.humanoid) {
+          const humanoid = vrm.humanoid;
+          const leftArm = humanoid.getRawBoneNode('leftUpperArm');
+          const rightArm = humanoid.getRawBoneNode('rightUpperArm');
+          const leftFore = humanoid.getRawBoneNode('leftLowerArm');
           const rightFore = humanoid.getRawBoneNode('rightLowerArm');
           const d = THREE.MathUtils.degToRad;
-          if (leftArm)  { leftArm.rotation.z  =  d(75); leftArm.rotation.x  = d(6); }
-          if (rightArm) { rightArm.rotation.z  = -d(75); rightArm.rotation.x = d(6); }
-          if (leftFore)  { leftFore.rotation.x  = d(8);  leftFore.rotation.z  = -d(4); }
-          if (rightFore) { rightFore.rotation.x = d(8);  rightFore.rotation.z =  d(4); }
+          if (leftArm) { leftArm.rotation.z = d(75); leftArm.rotation.x = d(6); }
+          if (rightArm) { rightArm.rotation.z = -d(75); rightArm.rotation.x = d(6); }
+          if (leftFore) { leftFore.rotation.x = d(8); leftFore.rotation.z = -d(4); }
+          if (rightFore) { rightFore.rotation.x = d(8); rightFore.rotation.z = d(4); }
           this._chest = humanoid.getRawBoneNode('upperChest') || humanoid.getRawBoneNode('chest');
         }
 
@@ -62,12 +63,12 @@ registerOnce('vrm-model', {
           npcGreeting: this.data.npcGreeting,
           boothId: this.data.boothId,
         };
-        vrm.scene.traverse((node) => {
+        sceneRoot.traverse((node) => {
           if (node.isMesh) registerNpcMesh(node, npcInfo);
         });
 
-        this.el.setObject3D('vrm', vrm.scene);
-        this.vrm = vrm;
+        this.el.setObject3D('vrm', sceneRoot);
+        this.vrm = vrm || { scene: sceneRoot };
       },
       undefined,
       (error) => {

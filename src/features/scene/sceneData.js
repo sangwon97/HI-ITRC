@@ -1,31 +1,25 @@
 // 전시장 모델, 경로, 패널, 포스터 설명용 정적 데이터 모음
 export { posterInfoByImage } from './posterInfo.js';
 
-// CNU TV 스크린: GLB 경로 → { 썸네일 이미지, YouTube ID }
-export const tvScreenMap = {
-  'models/TVs/TV_CNU1_Screen.glb': {
+export const tvItems = [
+  {
+    id: 'tv-cnu1',
+    src: 'models/TVs/TV_CNU1.glb',
+    screenSrc: 'models/TVs/TV_CNU1_Screen.glb',
     imageSrc: 'imgs/Thumbnail/thumb_52yXsZbhpfA.webp',
     youtubeId: '52yXsZbhpfA',
   },
-  // 'models/TVs/TV_CNU2_Screen.glb': {
-  //   imageSrc: 'imgs/Thumbnail/thumb_5Fc9BvkS6a8.webp',
-  //   youtubeId: '5Fc9BvkS6a8',
-  // },
-};
-
-export const tvItems = [
-  { id: 'tv-cnu1', src: 'models/TVs/TV_CNU1.glb' },
   { id: 'tv-side', src: 'models/TVs/TV_Side.glb' },
 ];
 
 export const npcItems = [
-  { id: 'S1B1', x: -1.8625, z: -31.492,  rotY: -90, boothName: '범용 인공지능 연구센터',    vrm: 'npc/npc.vrm' },
-  { id: 'S1B2', x: -1.8625, z: -25.9935, rotY: -90, boothName: '초지능연구센터',            vrm: 'npc/npc.vrm' },
-  { id: 'S1B3', x:  1.8603, z: -25.9923, rotY:  90, boothName: '스마트ICT융합인재양성센터', vrm: 'npc/npc.vrm' },
-  { id: 'S1B4', x:  1.8603, z: -31.4944, rotY:  90, boothName: '지능화혁신G5-AICT연구센터', vrm: 'npc/npc.vrm' },
-  { id: 'S1B5', x: -7.6637, z: -31.7873, rotY:  90, boothName: '스마트ICT융합인재양성센터', vrm: 'npc/npc.vrm' },
-  { id: 'S1B6', x: -7.4632, z: -27.449,  rotY:  61.985, boothName: '지능화혁신G5-AICT연구센터', vrm: 'npc/npc.vrm' },
-  { id: 'S1B7', x: -7.6637, z: -20.7867, rotY:  90, boothName: '경남지능화혁신사업단',      vrm: 'npc/npc.vrm' },
+  { id: 'S1B1', x: -1.8625, z: -31.492,  rotY: -90, boothName: '범용 인공지능 연구센터',    modelSrc: 'npc/LowPolyNPC.glb' },
+  { id: 'S1B2', x: -1.8625, z: -25.9935, rotY: -90, boothName: '초지능연구센터',            modelSrc: 'npc/LowPolyNPC.glb' },
+  { id: 'S1B3', x:  1.8603, z: -25.9923, rotY:  90, boothName: '스마트ICT융합인재양성센터', modelSrc: 'npc/LowPolyNPC.glb' },
+  { id: 'S1B4', x:  1.8603, z: -31.4944, rotY:  90, boothName: '지능화혁신G5-AICT연구센터', modelSrc: 'npc/LowPolyNPC.glb' },
+  { id: 'S1B5', x: -7.6637, z: -31.7873, rotY:  90, boothName: '스마트ICT융합인재양성센터', modelSrc: 'npc/LowPolyNPC.glb' },
+  { id: 'S1B6', x: -7.4632, z: -27.449,  rotY:  61.985, boothName: '지능화혁신G5-AICT연구센터', modelSrc: 'npc/LowPolyNPC.glb' },
+  { id: 'S1B7', x: -7.6637, z: -20.7867, rotY:  90, boothName: '경남지능화혁신사업단',      modelSrc: 'npc/LowPolyNPC.glb' },
 ];
 export const assetItems = [
   { id: 'ceiling', src: 'models/Ceiling.glb' },
@@ -36,7 +30,6 @@ export const assetItems = [
   { id: 'booths', src: 'models/WholeBooth.glb' },
   { id: 'navmesh', src: 'models/NavMesh_WholeMap.glb' },
   { id: 'navmeshMovable', src: 'models/NavMesh_Movable.glb' },
-  { id: 'minimapFloorArea', src: 'models/MinimapMesh_FloorArea.glb' },
   { id: 'PV_NextGenAI', src: 'models/Panels/Panel_Vertical_NextGenAI.glb' },
   { id: 'PV_AI_Platform', src: 'models/Panels/Panel_Vertical_AI_Platform_Service.glb' },
   { id: 'PV_Bio_Healthcare', src: 'models/Panels/Panel_Vertical_Bio_Healthcare.glb' },
