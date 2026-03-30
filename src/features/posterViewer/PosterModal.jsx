@@ -34,7 +34,6 @@ export default function PosterModal({ poster, onClose, immersive = false }) {
             {isInfoVisible ? '화면 클릭 시 이미지가 보입니다.' : '포스터 클릭 시 설명이 보입니다.'}
           </div>
           <div id="poster-mobile-info" aria-hidden={isInfoVisible ? 'false' : 'true'}>
-            <p className="poster-mobile-eyebrow">Poster</p>
             <h3>{poster.title}</h3>
             <p>{poster.description}</p>
           </div>
@@ -55,7 +54,6 @@ export default function PosterModal({ poster, onClose, immersive = false }) {
           <img src={poster.imageSrc} alt={poster.title} />
         </div>
         <div className="poster-modal-content">
-          <p className="poster-modal-eyebrow">Poster Detail</p>
           <h3>{poster.title}</h3>
           <p className="poster-modal-description">{poster.description}</p>
           <button type="button" className="poster-modal-close" onClick={onClose}>

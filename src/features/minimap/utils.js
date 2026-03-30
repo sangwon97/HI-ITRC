@@ -127,12 +127,12 @@ export function drawMiniMapFrame(ctx, options) {
     );
 
     ctx.beginPath();
-    ctx.fillStyle = 'rgba(251, 191, 36, 0.95)';
+    ctx.fillStyle = 'rgba(0, 42, 255, 0.95)';
     ctx.arc(point.x, point.y, 4.5, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.beginPath();
-    ctx.strokeStyle = 'rgba(31, 184, 59, 0.92)';
+    ctx.strokeStyle = 'rgba(67, 152, 192, 0.92)';
     ctx.lineWidth = 1.5;
     ctx.arc(point.x, point.y, 7, 0, Math.PI * 2);
     ctx.stroke();
