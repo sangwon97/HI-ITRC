@@ -2,59 +2,118 @@
 function getMiniMapViewport(bounds, canvasWidth, canvasHeight, padding) {
   const width = bounds.maxX - bounds.minX || 1;
   const height = bounds.maxZ - bounds.minZ || 1;
-  const scaleX = (canvasWidth - padding * 2) / width;
-  const scaleY = (canvasHeight - padding * 2) / height;
-  const offsetX = padding;
-  const offsetY = padding;
+  const scale = Math.min(
+    (canvasWidth - padding * 2) / width,
+    (canvasHeight - padding * 2) / height,
+  );
+  const offsetX = (canvasWidth - width * scale) * 0.5;
+  const offsetY = (canvasHeight - height * scale) * 0.5;
 
   return {
     width,
     height,
-    scaleX,
-    scaleY,
+    scale,
     offsetX,
     offsetY,
   };
 }
 
+function projectWithViewport(x, z, bounds, canvasHeight, viewport) {
+  return {
+    x: viewport.offsetX + (bounds.maxX - x) * viewport.scale,
+    y: canvasHeight - (viewport.offsetY + (z - bounds.minZ) * viewport.scale),
+  };
+}
+
+function drawNavMeshLayer(ctx, navMeshLayer, bounds, canvasHeight, viewport) {
+  if (!navMeshLayer?.triangles?.length) return;
+
+  ctx.save();
+  ctx.beginPath();
+
+  navMeshLayer.triangles.forEach((triangle) => {
+    const firstPoint = projectWithViewport(
+      triangle[0].x,
+      triangle[0].z,
+      bounds,
+      canvasHeight,
+      viewport,
+    );
+    const secondPoint = projectWithViewport(
+      triangle[1].x,
+      triangle[1].z,
+      bounds,
+      canvasHeight,
+      viewport,
+    );
+    const thirdPoint = projectWithViewport(
+      triangle[2].x,
+      triangle[2].z,
+      bounds,
+      canvasHeight,
+      viewport,
+    );
+
+    ctx.moveTo(firstPoint.x, firstPoint.y);
+    ctx.lineTo(secondPoint.x, secondPoint.y);
+    ctx.lineTo(thirdPoint.x, thirdPoint.y);
+    ctx.closePath();
+  });
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(220, 255, 248, 0.36)';
+  ctx.lineWidth = 0.6;
+  ctx.stroke();
+  ctx.restore();
+}
+
 export function projectMiniMapPoint(x, z, bounds, canvasWidth, canvasHeight, padding) {
   const viewport = getMiniMapViewport(bounds, canvasWidth, canvasHeight, padding);
 
-  return {
-    x: canvasWidth - (viewport.offsetX + (x - bounds.minX) * viewport.scaleX),
-    y: canvasHeight - (viewport.offsetY + (z - bounds.minZ) * viewport.scaleY),
-  };
+  return projectWithViewport(x, z, bounds, canvasHeight, viewport);
 }
 
 export function drawMiniMapFrame(ctx, options) {
   const {
     canvas,
     bounds,
+    navMeshLayer = null,
     playerPosition,
     heading,
     route,
     searchMarkers = [],
     backgroundImage = null,
   } = options;
-  const padding = 0;
+  const padding = 18
+  ;
   const viewport = getMiniMapViewport(bounds, canvas.width, canvas.height, padding);
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  if (backgroundImage?.complete && backgroundImage.naturalWidth > 0) {
-    ctx.drawImage(
-      backgroundImage,
-      canvas.width,
-      0,
-      -canvas.width,
-      canvas.height,
-    );
-  } else {
+  if (!(backgroundImage?.complete && backgroundImage.naturalWidth > 0)) {
     const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
     gradient.addColorStop(0, 'rgba(22, 34, 61, 0.94)');
     gradient.addColorStop(1, 'rgba(10, 18, 34, 0.9)');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  drawNavMeshLayer(ctx, navMeshLayer, bounds, canvas.height, viewport);
+
+  if (backgroundImage?.complete && backgroundImage.naturalWidth > 0) {
+    const drawWidth = viewport.width * viewport.scale;
+    const drawHeight = viewport.height * viewport.scale;
+    ctx.save();
+    ctx.globalAlpha = navMeshLayer ? 0.9 : 0.8;
+    ctx.drawImage(
+      backgroundImage,
+      viewport.offsetX + drawWidth,
+      viewport.offsetY,
+      -drawWidth,
+      drawHeight,
+    );
+    ctx.restore();
   }
 
   searchMarkers.forEach((marker) => {
@@ -135,7 +194,7 @@ export function drawMiniMapFrame(ctx, options) {
     ctx.fill();
 
     ctx.beginPath();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.96)';
+    ctx.strokeStyle = '#ff4d6e89';
     ctx.lineWidth = 2;
     ctx.arc(player.x, player.y, 8, 0, Math.PI * 2);
     ctx.stroke();

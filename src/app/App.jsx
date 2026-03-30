@@ -660,7 +660,7 @@ export default function App() {
         const [boothText, coordText] = await Promise.all([boothResponse.text(), coordResponse.text()]);
 
         const boothRows = parseCsvRows(boothText).map((row) => ({
-          objectName: row['Object Name'],
+          boothId: row['Booth Number'],
           boothName: row['Booth Name'],
           univName: row['Univ Name'],
         }));
@@ -761,7 +761,7 @@ export default function App() {
 
   // 검색 결과 기준 rig 좌표 이동
   const handleSelectSearchResult = (result) => {
-    const destination = searchCoordinateMap[result.objectName];
+    const destination = searchCoordinateMap[result.boothId];
     const rig = document.getElementById('rig')?.object3D;
     if (!destination || !rig) return;
 
@@ -779,14 +779,14 @@ export default function App() {
           (entry) =>
             String(entry.boothName || '').toLowerCase().includes(normalizedSearchQuery) ||
             String(entry.univName || '').toLowerCase().includes(normalizedSearchQuery) ||
-            String(entry.objectName || '').toLowerCase().includes(normalizedSearchQuery),
+            String(entry.boothId || '').toLowerCase().includes(normalizedSearchQuery),
         )
         .slice(0, 8)
     : [];
 
   const miniMapSearchMarkers = filteredSearchResults
     .map((entry) => {
-      const destination = searchCoordinateMap[entry.objectName];
+      const destination = searchCoordinateMap[entry.boothId];
       if (!destination) return null;
 
       return {

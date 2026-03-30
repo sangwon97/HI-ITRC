@@ -63,7 +63,7 @@
 }
 
 .utility-tab {
-  flex: 1 1 0;
+  flex: 1 1;
 }
 
 .utility-tab.active {
@@ -78,7 +78,7 @@
   gap: 10px;
   padding: 12px;
   border: 1px solid rgba(148, 163, 184, 0.22);
-  border-radius: 18px;
+  border-radius: 12px;
   background: rgba(7, 13, 27, 0.82);
   backdrop-filter: blur(12px);
   box-shadow: 0 14px 30px rgba(2, 8, 23, 0.34);
@@ -90,7 +90,7 @@
   color: rgba(226, 232, 240, 0.92);
   font-size: 12px;
   line-height: 1.5;
-  text-align: left;
+  text-align: justify;
 }
 
 .route-chip-list {
@@ -139,6 +139,11 @@
   align-items: center;
 }
 
+#utility-tab-content.mini-map-content {
+  gap: 0;
+  padding: 1px;
+}
+
 .mini-map-content canvas {
   display: block;
   width: 100%;
@@ -171,10 +176,6 @@
   #utility-tab-shell {
     flex-basis: clamp(156px, 36vw, 220px);
     width: clamp(156px, 36vw, 220px);
-  }
-
-  .route-guide-copy {
-    text-align: center;
   }
 
   .route-chip-list {

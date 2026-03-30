@@ -8,10 +8,79 @@ const MINIMAP_BOUNDS = {
   maxZ: 32.0701,
 };
 
+function createEmptyBounds() {
+  return {
+    minX: Number.POSITIVE_INFINITY,
+    maxX: Number.NEGATIVE_INFINITY,
+    minZ: Number.POSITIVE_INFINITY,
+    maxZ: Number.NEGATIVE_INFINITY,
+  };
+}
+
+function includePointInBounds(bounds, x, z) {
+  bounds.minX = Math.min(bounds.minX, x);
+  bounds.maxX = Math.max(bounds.maxX, x);
+  bounds.minZ = Math.min(bounds.minZ, z);
+  bounds.maxZ = Math.max(bounds.maxZ, z);
+}
+
+function extractMiniMapLayer(rootObject, THREE) {
+  if (!rootObject || !THREE) return null;
+
+  const triangles = [];
+  const bounds = createEmptyBounds();
+  const worldVertex = new THREE.Vector3();
+
+  rootObject.updateMatrixWorld(true);
+
+  rootObject.traverse((node) => {
+    if (!node.isMesh) return;
+
+    const geometry = node.geometry;
+    const positionAttribute = geometry?.attributes?.position;
+    if (!positionAttribute) return;
+
+    const readVertex = (vertexIndex) => {
+      worldVertex.fromBufferAttribute(positionAttribute, vertexIndex);
+      worldVertex.applyMatrix4(node.matrixWorld);
+
+      const point = { x: worldVertex.x, z: worldVertex.z };
+      includePointInBounds(bounds, point.x, point.z);
+      return point;
+    };
+
+    if (geometry.index) {
+      for (let index = 0; index < geometry.index.count; index += 3) {
+        triangles.push([
+          readVertex(geometry.index.array[index]),
+          readVertex(geometry.index.array[index + 1]),
+          readVertex(geometry.index.array[index + 2]),
+        ]);
+      }
+      return;
+    }
+
+    for (let index = 0; index < positionAttribute.count; index += 3) {
+      triangles.push([
+        readVertex(index),
+        readVertex(index + 1),
+        readVertex(index + 2),
+      ]);
+    }
+  });
+
+  if (!triangles.length || !Number.isFinite(bounds.minX) || !Number.isFinite(bounds.minZ)) {
+    return null;
+  }
+
+  return { triangles, bounds };
+}
+
 // 미니맵 표시
 export default function MiniMap({ route, searchMarkers }) {
   const canvasRef = useRef(null);
   const backgroundImageRef = useRef(null);
+  const navMeshLayerRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -25,6 +94,14 @@ export default function MiniMap({ route, searchMarkers }) {
     // 플레이어 위치와 시야각의 매 프레임 재렌더링
     const draw = () => {
       if (disposed) return;
+
+      if (!navMeshLayerRef.current) {
+        const navMeshObject = document.getElementById('navmesh-movable')?.object3D;
+        const extractedLayer = extractMiniMapLayer(navMeshObject, THREE);
+        if (extractedLayer) {
+          navMeshLayerRef.current = extractedLayer;
+        }
+      }
 
       const rig = document.getElementById('rig')?.object3D;
       const camera = document.getElementById('player-camera')?.object3D;
@@ -42,7 +119,8 @@ export default function MiniMap({ route, searchMarkers }) {
 
       drawMiniMapFrame(ctx, {
         canvas,
-        bounds: MINIMAP_BOUNDS,
+        bounds: navMeshLayerRef.current?.bounds || MINIMAP_BOUNDS,
+        navMeshLayer: navMeshLayerRef.current,
         playerPosition: rig?.position || null,
         heading,
         route,

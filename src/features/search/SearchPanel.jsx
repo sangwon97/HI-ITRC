@@ -38,7 +38,7 @@ export default function SearchPanel({
         <div className="search-results">
           {results.map((result) => (
             <button
-              key={`${result.objectName}-${result.boothName}`}
+              key={`${result.boothId}-${result.boothName}`}
               type="button"
               className="search-result-item"
               onClick={() => onSelect(result)}
