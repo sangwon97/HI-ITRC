@@ -160,6 +160,37 @@ a-scene .a-fullscreen-button {
 }
 
 @media (max-width: 768px) {
+  #welcome-modal,
+  .search-results,
+  #info-mobile-actions,
+  #info-modal,
+  .info-modal-panel-body,
+  .poster-modal-description,
+  #poster-mobile-info,
+  #info-mobile-sheet,
+  #npc-modal,
+  .npc-faq-list,
+  #npc-mobile-sheet {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  #welcome-modal::-webkit-scrollbar,
+  .search-results::-webkit-scrollbar,
+  #info-mobile-actions::-webkit-scrollbar,
+  #info-modal::-webkit-scrollbar,
+  .info-modal-panel-body::-webkit-scrollbar,
+  .poster-modal-description::-webkit-scrollbar,
+  #poster-mobile-info::-webkit-scrollbar,
+  #info-mobile-sheet::-webkit-scrollbar,
+  #npc-modal::-webkit-scrollbar,
+  .npc-faq-list::-webkit-scrollbar,
+  #npc-mobile-sheet::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
   #mobile-scene-status {
     padding: 18px;
   }
