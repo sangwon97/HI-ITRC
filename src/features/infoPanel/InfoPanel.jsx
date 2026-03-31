@@ -83,19 +83,40 @@ function InfoGallerySection({ item }) {
                 </button>
                 {isOpen ? (
                   <div className="info-category-panel">
+                    <p className="info-logo-hint">클릭 시 해당 센터 소개 페이지로 이동됩니다.</p>
                     <div className="info-logo-rail standalone" role="list" aria-label={`${entry.title} 참여 대학 로고 목록`}>
-                      {entry.logos.map((logo) => (
-                        <article
-                          key={`${entry.title}-${logo.label}`}
-                          className="info-logo-card"
-                          role="listitem"
-                          style={accentStyle}
-                        >
+                      {entry.logos.map((logo) => {
+                        const key = `${entry.title}-${logo.label}`;
+                        const logoMedia = (
                           <div className="info-logo-media">
                             <img src={logo.imageSrc} alt={logo.imageAlt || logo.label} loading="lazy" />
                           </div>
-                        </article>
-                      ))}
+                        );
+
+                        if (logo.href) {
+                          return (
+                            <a
+                              key={key}
+                              className="info-logo-card info-logo-link"
+                              href={logo.href}
+                              role="listitem"
+                              style={accentStyle}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              aria-label={`${logo.label} 소개 페이지 열기`}
+                              title={`${logo.label} 소개 페이지 열기`}
+                            >
+                              {logoMedia}
+                            </a>
+                          );
+                        }
+
+                        return (
+                          <article key={key} className="info-logo-card" role="listitem" style={accentStyle}>
+                            {logoMedia}
+                          </article>
+                        );
+                      })}
                     </div>
                   </div>
                 ) : null}
