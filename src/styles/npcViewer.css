@@ -145,6 +145,195 @@
   flex-shrink: 0;
 }
 
+#npc-mobile-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 10008;
+  background: #020617;
+}
+
+#npc-mobile-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding:
+    max(10px, env(safe-area-inset-top))
+    max(14px, env(safe-area-inset-right))
+    max(12px, env(safe-area-inset-bottom))
+    max(14px, env(safe-area-inset-left));
+  box-sizing: border-box;
+}
+
+#npc-mobile-close {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 6px);
+  right: calc(env(safe-area-inset-right) + 6px);
+  z-index: 2;
+  min-width: 64px;
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(7, 13, 27, 0.76);
+  color: rgba(239, 246, 255, 0.96);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 14px 30px rgba(2, 8, 23, 0.34);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#npc-mobile-sheet {
+  width: 100%;
+  height: 100%;
+  padding: 60px 16px 18px;
+  border-radius: 28px 28px 22px 22px;
+  background: rgba(2, 6, 23, 0.92);
+  color: rgba(239, 246, 255, 0.96);
+  overflow-y: auto;
+  box-sizing: border-box;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 18px 36px rgba(2, 8, 23, 0.34);
+}
+
+.npc-mobile-chat-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.npc-mobile-chat-status {
+  margin: 0;
+  color: rgba(125, 211, 252, 0.92);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.npc-mobile-chat-name {
+  margin: 0;
+  color: rgba(239, 246, 255, 0.98);
+  font-size: clamp(24px, 6vw, 34px);
+  line-height: 1.24;
+}
+
+.npc-mobile-chat-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.npc-chat-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.npc-chat-row-user {
+  justify-content: flex-end;
+}
+
+.npc-chat-avatar {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, rgba(56, 189, 248, 0.24), rgba(37, 99, 235, 0.18));
+  border: 1px solid rgba(125, 211, 252, 0.28);
+  color: rgba(239, 246, 255, 0.96);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.npc-chat-bubble {
+  max-width: min(78vw, 520px);
+  padding: 12px 14px;
+  box-sizing: border-box;
+}
+
+.npc-chat-bubble.npc {
+  border-radius: 18px 18px 18px 8px;
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  box-shadow: 0 10px 22px rgba(2, 8, 23, 0.18);
+}
+
+.npc-chat-bubble.npc.feature {
+  background:
+    radial-gradient(circle at top right, rgba(96, 165, 250, 0.12), transparent 32%),
+    rgba(15, 23, 42, 0.9);
+}
+
+.npc-chat-bubble.user {
+  border-radius: 18px 18px 8px 18px;
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.92), rgba(29, 78, 216, 0.96));
+  border: 1px solid rgba(147, 197, 253, 0.24);
+  box-shadow: 0 10px 22px rgba(2, 8, 23, 0.2);
+}
+
+.npc-chat-bubble p {
+  margin: 0;
+  color: rgba(241, 245, 249, 0.96);
+  font-size: 14px;
+  line-height: 1.7;
+  text-align: justify;
+  text-align-last: start;
+}
+
+.npc-chat-bubble-label {
+  margin-bottom: 6px !important;
+  color: rgba(125, 211, 252, 0.94) !important;
+  font-size: 11px !important;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.npc-mobile-quick-panel {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.npc-mobile-quick-title {
+  margin: 0 0 12px;
+  color: rgba(148, 163, 184, 0.92);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.npc-mobile-quick-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.npc-mobile-quick-chip {
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(15, 23, 42, 0.74);
+  color: rgba(226, 232, 240, 0.94);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+  text-align: start;
+  cursor: pointer;
+}
+
+.npc-mobile-quick-chip.active {
+  background: rgba(30, 64, 175, 0.88);
+  border-color: rgba(147, 197, 253, 0.34);
+  color: rgba(239, 246, 255, 0.98);
+}
+
 @media (max-width: 768px) {
   #npc-modal {
     width: calc(100vw - 24px);
