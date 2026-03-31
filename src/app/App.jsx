@@ -23,6 +23,7 @@ const MOBILE_BASE_ASSET_IDS = new Set([
   'navmesh',
   'navmeshMovable',
 ]);
+const MOBILE_NPC_ACTIVE_LIMIT = 4;
 
 const boothNameGeneratorAttr = `
   csvUrl: BoothName_PosRot.csv;
@@ -86,9 +87,19 @@ const buildTvMarkup = (items) => items
 const buildNpcMarkup = (items) => items
   .map(({ id, x, z, rotY, boothName, modelSrc }) => `
     <a-entity
-      vrm-model="src: ${modelSrc}; boothId: ${id}; npcName: ${boothName} 안내원; npcGreeting: 안녕하세요! 저는 ${boothName}의 안내원입니다. 궁금하신 점이 있으시면 언제든지 말씀해 주세요."
+      npc-model="src: ${modelSrc}; boothId: ${id}; npcName: ${boothName}; npcGreeting: 안녕하세요! 저는 ${boothName}의 안내원입니다. 궁금하신 점이 있으시면 언제든지 말씀해 주세요."
       position="${x} 0 ${z}"
       scale="1.1 1.1 1.1"
+      rotation="0 ${rotY} 0">
+    </a-entity>`)
+  .join('');
+
+const buildMobileNpcMarkup = (items) => items
+  .map(({ id, x, z, rotY, boothName, modelSrc }) => `
+    <a-entity
+      proximity-npc="rig: #rig; src: ${modelSrc}; boothId: ${id}; npcName: ${boothName}; npcGreeting: 안녕하세요! 저는 ${boothName}의 안내원입니다. 궁금하신 점이 있으시면 언제든지 말씀해 주세요.; loadDistance: 12; unloadDistance: 16; billboardDistance: 24; maxActive: ${MOBILE_NPC_ACTIVE_LIMIT}; checkInterval: 250; pauseOutsideViewport: true"
+      position="${x} 0 ${z}"
+      scale="1.05 1.05 1.05"
       rotation="0 ${rotY} 0">
     </a-entity>`)
   .join('');
@@ -171,7 +182,11 @@ const mobileTvSceneMarkup = `
     ${buildTvMarkup(tvItems)}
   </a-entity>
 `;
-const mobileNpcSceneMarkup = '';
+const mobileNpcSceneMarkup = `
+  <a-entity id="mobile-deferred-npc-root">
+    ${buildMobileNpcMarkup(npcItems)}
+  </a-entity>
+`;
 const DEFAULT_ROUTE_START_POINT = { x: -4.79, y: 0, z: -38.41 };
 const ROUTE_GUIDE_DISTANCE = 2.2;
 
@@ -891,7 +906,11 @@ export default function App() {
                 immersive={isMobileScene}
                 onClose={() => setSelectedPoster(null)}
               />
-              <NpcModal npc={selectedNpc} onClose={() => setSelectedNpc(null)} />
+              <NpcModal
+                npc={selectedNpc}
+                isMobile={isMobileScene}
+                onClose={() => setSelectedNpc(null)}
+              />
               <VideoViewer tv={selectedTv} onClose={() => setSelectedTv(null)} />
               <VirtualJoystick />
             </>

@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { getNpcData } from './npcData.js';
 
 // NPC 클릭 시 표시되는 대화 모달
-export default function NpcModal({ npc, onClose }) {
+export default function NpcModal({ npc, onClose, isMobile = false }) {
   const [activeIndex, setActiveIndex] = useState(null);
+
+  useEffect(() => {
+    setActiveIndex(null);
+  }, [npc?.boothId]);
 
   if (!npc) return null;
 
@@ -12,6 +16,85 @@ export default function NpcModal({ npc, onClose }) {
   const handleQuestion = (index) => {
     setActiveIndex((current) => (current === index ? null : index));
   };
+
+  if (isMobile) {
+    const activeFaq = activeIndex != null ? centerData?.faqs?.[activeIndex] : null;
+
+    return (
+      <div id="npc-mobile-viewer" role="dialog" aria-modal="true" aria-labelledby="npc-mobile-title">
+        <div id="npc-mobile-stage">
+          <button
+            type="button"
+            id="npc-mobile-close"
+            aria-label="NPC 도움말 닫기"
+            onClick={onClose}
+          >
+            닫기
+          </button>
+          <section id="npc-mobile-sheet">
+            <div className="npc-mobile-chat-header">
+              <h3 id="npc-mobile-title" className="npc-mobile-chat-name">
+                {npc.npcName}
+              </h3>
+            </div>
+
+            <div className="npc-mobile-chat-thread">
+              <article className="npc-chat-row npc-chat-row-npc">
+                <div className="npc-chat-avatar" aria-hidden="true">NPC</div>
+                <div className="npc-chat-bubble npc">
+                  <p>{npc.npcGreeting}</p>
+                </div>
+              </article>
+
+              {centerData ? (
+                <article className="npc-chat-row npc-chat-row-npc">
+                  <div className="npc-chat-avatar" aria-hidden="true">NPC</div>
+                  <div className="npc-chat-bubble npc feature">
+                    <p className="npc-chat-bubble-label">센터 소개</p>
+                    <p>{centerData.intro}</p>
+                  </div>
+                </article>
+              ) : null}
+
+              {activeFaq ? (
+                <>
+                  <article className="npc-chat-row npc-chat-row-user">
+                    <div className="npc-chat-bubble user">
+                      <p>{activeFaq.question}</p>
+                    </div>
+                  </article>
+                  <article className="npc-chat-row npc-chat-row-npc">
+                    <div className="npc-chat-avatar" aria-hidden="true">NPC</div>
+                    <div className="npc-chat-bubble npc">
+                      <p>{activeFaq.answer}</p>
+                    </div>
+                  </article>
+                </>
+              ) : null}
+            </div>
+
+            {centerData ? (
+              <div className="npc-mobile-quick-panel">
+                <p className="npc-mobile-quick-title">질문을 선택해 보세요</p>
+                <div className="npc-mobile-quick-list">
+                  {centerData.faqs.map((item, index) => (
+                    <button
+                      key={item.question}
+                      type="button"
+                      className={`npc-mobile-quick-chip ${activeIndex === index ? 'active' : ''}`}
+                      onClick={() => handleQuestion(index)}
+                    >
+                      {item.question}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </section>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div id="npc-modal-backdrop" onClick={onClose}>
