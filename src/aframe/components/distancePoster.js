@@ -8,6 +8,7 @@ const placeholderMaterial = new THREE.MeshBasicMaterial({
   color: 0x666666,
   side: THREE.FrontSide,
 });
+const posterPreviewPlateColor = 0x7dd3fc;
 
 function isMobileTextureProfile() {
   return typeof window !== 'undefined' && window.matchMedia('(max-width: 900px), (pointer: coarse)').matches;
@@ -59,7 +60,7 @@ function loadPosterMaterial(src, sceneEl, quality) {
 
   const mobileProfile = isMobileTextureProfile();
   const maxDimension = quality === 'high'
-    ? (mobileProfile ? 256 : 1024)
+    ? (mobileProfile ? 512 : 1024)
     : (mobileProfile ? 64 : 128);
   const promise = loadImage(src).then((image) => {
     const texture = createScaledTexture(image, sceneEl, maxDimension);
@@ -72,6 +73,32 @@ function loadPosterMaterial(src, sceneEl, quality) {
 
   materialCache.set(cacheKey, promise);
   return promise;
+}
+
+function ensurePosterPreviewPlate(node) {
+  if (node.userData.posterPreviewPlate || !node.geometry) return;
+
+  const plate = new THREE.Mesh(
+    node.geometry,
+    new THREE.MeshBasicMaterial({
+      color: posterPreviewPlateColor,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.52,
+      depthTest: false,
+      depthWrite: false,
+      toneMapped: false,
+    }),
+  );
+
+  plate.visible = false;
+  plate.renderOrder = 7;
+  plate.scale.setScalar(1.08);
+  plate.position.z = -0.012;
+  plate.userData.isPosterPreviewPlate = true;
+
+  node.add(plate);
+  node.userData.posterPreviewPlate = plate;
 }
 
 registerOnce('distance-poster', {
@@ -91,6 +118,7 @@ registerOnce('distance-poster', {
     this._quality = 'placeholder';
     this._loadToken = 0;
     this._meshNodes = [];
+    this._anchor = { x: this.data.anchorX, z: this.data.anchorZ };
     this._onModelLoaded = this.handleModelLoaded.bind(this);
     this.el.addEventListener('model-loaded', this._onModelLoaded);
     this.el.setAttribute('gltf-model', this.data.model);
@@ -108,11 +136,22 @@ registerOnce('distance-poster', {
 
     this._meshNodes = [];
     mesh.traverse((node) => {
-      if (!node.isMesh || node.userData.isPosterFrame) return;
+      if (!node.isMesh || node.userData.isPosterFrame || node.userData.isPosterPreviewPlate) return;
       node.userData.posterInfo = posterMetadata;
       registerPosterMesh(node, posterMetadata);
+      ensurePosterPreviewPlate(node);
       this._meshNodes.push(node);
     });
+
+    // Use the actual poster model position in world space so quality switches
+    // based on the poster the user is standing near, not a guessed booth anchor.
+    mesh.updateMatrixWorld(true);
+    const worldBounds = new THREE.Box3().setFromObject(mesh);
+    if (!worldBounds.isEmpty()) {
+      const center = new THREE.Vector3();
+      worldBounds.getCenter(center);
+      this._anchor = { x: center.x, z: center.z };
+    }
 
     this.applyQuality(this._quality);
   },
@@ -150,7 +189,8 @@ registerOnce('distance-poster', {
     const rig = this.data.rig?.object3D;
     if (!rig) return;
 
-    const distance = Math.hypot(rig.position.x - this.data.anchorX, rig.position.z - this.data.anchorZ);
+    const anchor = this._anchor || { x: this.data.anchorX, z: this.data.anchorZ };
+    const distance = Math.hypot(rig.position.x - anchor.x, rig.position.z - anchor.z);
     const nextQuality = distance <= this.data.nearDistance ? 'high' : 'low';
     if (nextQuality !== this._quality) {
       this.applyQuality(nextQuality);
