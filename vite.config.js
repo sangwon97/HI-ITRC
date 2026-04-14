@@ -42,4 +42,9 @@ function copyStaticAssets() {
 
 export default defineConfig({
   plugins: [react(), copyStaticAssets()],
+  server: {
+    proxy: {
+      '/api': 'http://168.131.154.198:3001',
+    },
+  },
 });
